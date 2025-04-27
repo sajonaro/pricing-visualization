@@ -1,0 +1,13 @@
+{
+    "app_containers": {
+        "vcpu_price_per_second": 0.000024,
+        "gib_price_per_second": 0.000003
+    },
+    
+    "gke": {
+        "vcpu_price_per_second": 0.00001486111111111111,
+        "gib_price_per_second": 0.000001643694444444444
+    }
+
+  
+}
