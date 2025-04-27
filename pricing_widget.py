@@ -39,6 +39,6 @@ gke_usd_value = number_of_seconds * number_of_tasks * (gke_vcpu_price_per_second
 st.subheader('Estimated Cost')
 col1, col2 = st.columns(2)
 with col1:
-    st.text_input("Azure (USD)", value=f"{azure_usd_value:.2f}", disabled=True)
+    st.text_input("Azure ContainerApps (USD)", value=f"{azure_usd_value:.2f}", disabled=True)
 with col2:
     st.text_input("GKE (USD)", value=f"{gke_usd_value:.2f}", disabled=True)
