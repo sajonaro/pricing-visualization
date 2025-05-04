@@ -5,8 +5,8 @@
     },
     
     "gke": {
-        "vcpu_price_per_second": 0.00001486111111111111,
-        "gib_price_per_second": 0.000001643694444444444
+        "vcpu_price_per_minute": 0.0008916666666,
+        "gib_price_per_minute":  0.0000986216666
     }
 
   

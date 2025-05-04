@@ -14,6 +14,13 @@
 | Oracle Cloud       | Container Engine for Kubernetes (OKE) | Not Available                  | Standard Mode           |
 
 
+### Strategies for cost optimization 
+ - GKE
+    - Autopilot + SpotInstances (60-90 % discount for VMs), CUD (Committed Usage Discount)
+    - Standard Mode + Kubernetes Autoscaler 
+
+
+- AWS Karpenter (with Spot instances)
 
 
 
@@ -29,7 +36,7 @@ Summary details and links to Kubernetes (flavors) and pricing info
 
 - GKE 
     - Standard mode [VM prices](https://cloud.google.com/compute/vm-instance-pricing)
-    - Autopilot Mode ( ! No ability to manage node pools!),  us-west-2 [here](https://cloud.google.com/kubernetes-engine/pricing#enterprise_edition)
+    - Autopilot Mode ( ! No ability to manage node pools!),  us-west-2 [here](https://cloud.google.com/kubernetes-engine/pricing#autopilot_mode)
 - linode LKE [here](https://www.linode.com/pricing/#kubernetes)
 
 AWS

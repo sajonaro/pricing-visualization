@@ -21,19 +21,21 @@ if not azure_data or not gke_data:
 
 azure_vcpu_price_per_second = azure_data['vcpu_price_per_second']
 azure_gib_price_per_second = azure_data['gib_price_per_second']
-gke_vcpu_price_per_second = gke_data['vcpu_price_per_second']
-gke_gib_price_per_second = gke_data['gib_price_per_second']
+gke_vcpu_price_per_minute = gke_data['vcpu_price_per_minute']
+gke_gib_price_per_minute = gke_data['gib_price_per_minute']
 
 # Sliders
 vcpus = st.slider('vCPUs', 2, 8, 2)
 gibs = st.slider('GiBs', 8, 24, 8)
 minutes = st.slider('Minutes', 1, 480, 60)
 number_of_tasks = st.slider('Number of Tasks', 1, 1000, 100)
+number_of_days = st.slider('Number of Days', 1, 31, 1)
+
 
 # Calculation
 number_of_seconds = minutes * 60
-azure_usd_value = number_of_seconds * number_of_tasks * (azure_vcpu_price_per_second * vcpus + azure_gib_price_per_second * gibs)
-gke_usd_value = number_of_seconds * number_of_tasks * (gke_vcpu_price_per_second * vcpus + gke_gib_price_per_second * gibs)
+azure_usd_value = number_of_days * number_of_seconds * number_of_tasks * (azure_vcpu_price_per_second * vcpus + azure_gib_price_per_second * gibs)
+gke_usd_value = number_of_days * minutes * number_of_tasks * (gke_vcpu_price_per_minute * vcpus + gke_gib_price_per_minute * gibs)
 
 # Textboxes
 st.subheader('Estimated Cost')
