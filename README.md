@@ -21,7 +21,7 @@
 | Azure         | Azure Container Apps   | Kubernetes + KEDA     | High              | Event-driven or HTTP microservices             | Per request + CPU/Memory per sec, [link to pricing](https://azure.microsoft.com/en-us/pricing/details/container-apps/)   |
 | Azure         | AKS with Virtual Nodes | Kubernetes (AKS + ACI)| Medium           | Burst workloads in Kubernetes                  | Per vCPU/Memory (ACI pricing)       |
 | Google Cloud  | GKE Autopilot          | Kubernetes            | Medium            | Kubernetes apps without node management        | Per pod vCPU/Memory usage          |
-| AWS           | AWS Fargate (with EKS) | Kubernetes (EKS)      | Medium            | Run pods without managing EC2 nodes            | Per vCPU and memory per second     |
+| AWS           | AWS Fargate (with EKS) | Kubernetes (EKS)      | Medium            | Run pods without managing EC2 nodes            | Per vCPU and memory per second   [link to pricing](https://aws.amazon.com/fargate/pricing/)  |
 
 
 
