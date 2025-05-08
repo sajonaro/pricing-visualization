@@ -6,12 +6,12 @@
 ### Kubernetes Service Modes Across Major Cloud Providers
 
 | Cloud Provider     | Service Name                     | Autopilot (No Node Management) | Standard                |
-|--------------------|-----------------------------------|---------------------------------|-------------------------|
+|--------------------|----------------------------------|--------------------------------|-------------------------|
 | Microsoft Azure    | Azure Kubernetes Service (AKS)   | Automatic (preview)            | Standard Mode           |
 | Google Cloud (GCP) | Google Kubernetes Engine (GKE)   | Autopilot                      | Standard Mode           |
-| Amazon Web Services (AWS) | Elastic Kubernetes Service (EKS) | Auto Mode                      | Standard Mode           |
+| Amazon Web Services (AWS) | Elastic Kubernetes Service (EKS) | Auto Mode               | Standard Mode           |
 | IBM Cloud          | IBM Kubernetes Service           | Not Available                  | Standard Mode           |
-| Oracle Cloud       | Container Engine for Kubernetes (OKE) | Not Available                  | Standard Mode           |
+| Oracle Cloud       | Container Engine for Kubernetes (OKE) | Not Available             | Standard Mode           |
 
 
 ### Strategies for cost optimization 
@@ -33,10 +33,12 @@ Summary details and links to Kubernetes (flavors) and pricing info
     - Automatic (preview)
     - Standard mode cluster [pricing](https://azure.microsoft.com/en-us/pricing/details/kubernetes-service/?msockid=173f6a45c2db68ed1d077ed6c39969c9#pricing)
     - VM [pricing](https://instances.vantage.sh/azure/vm/f72s-v2), e.g. compute optimized F series
-
-- GKE 
-    - Standard mode [VM prices](https://cloud.google.com/compute/vm-instance-pricing)
-    - Autopilot Mode ( ! No ability to manage node pools!),  us-west-2 [here](https://cloud.google.com/kubernetes-engine/pricing#autopilot_mode)
+- GCP
+    - Cloud Run Functions, price = compute - free tier  [compute prices, 1st](https://cloud.google.com/functions/pricing-1stgen)
+    - Cloud Run,  price = compute + memory + (flat) invocation - free tier [pricing](https://cloud.google.com/run/pricing)
+    - GKE 
+        - Standard mode [VM prices](https://cloud.google.com/compute/vm-instance-pricing)
+        - Autopilot Mode ( ! No ability to manage node pools!),  us-west-2 [here](https://cloud.google.com/kubernetes-engine/pricing#autopilot_mode)
 - linode LKE [here](https://www.linode.com/pricing/#kubernetes)
 
 AWS
@@ -44,7 +46,7 @@ AWS
 
  - EKS Standard Mode ( a.k.a Worker Nodes), price = EC2 + `small fees` , [example c6i.32xlarge](https://instances.vantage.sh/aws/ec2/c6i.32xlarge)
 
-
+ - Lambdas, price  = compute + (flat) invocation,  [compute prices](https://aws.amazon.com/lambda/pricing/) 
 
 
 
@@ -65,6 +67,11 @@ AWS
 
 
 ```bash
-# to run tre widget
-$ streamlit run pricing_widget.py
+# to run the widget
+$ make run
+```
+
+```bash
+# to stop the widget
+$ make kill
 ```

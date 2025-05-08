@@ -3,11 +3,31 @@
         "vcpu_price_per_second": 0.000024,
         "gib_price_per_second": 0.000003
     },
+
+    "azure_functions": {
+    },
     
     "gke": {
         "vcpu_price_per_minute": 0.0008916666666,
         "gib_price_per_minute":  0.0000986216666
-    }
+    },
 
+    "gcp_cloudrun": {
+        "vcpu_price_per_second": 0.000024,
+        "gib_price_per_second":  0.00000250,
+        "free_vcpu_seconds": 180000,
+        "free_gib_seconds": 360000
+    },
+
+    "gcp_functions": {
+        "vcpu_price_per_second": 0.00006800,
+        "gibs_free_seconds": 400000,
+        "vcpus_free_seconds": 200000,
+        "free_invocations": 2000000
+    },
+    
+    "aws_lambda": {
+        "gib_price_per_second": 0.0000166667
+    }
   
 }
