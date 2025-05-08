@@ -13,7 +13,7 @@ except json.JSONDecodeError:
     st.stop()
 
 azure_data = pricing_data.get('app_containers')
-gke_data = pricing_data.get('gke')
+gke_autopilot_data = pricing_data.get('gke_autopilot')
 cloudrun_data = pricing_data.get('gcp_cloudrun')
 aws_lambda_data = pricing_data.get('aws_lambda')
 cloud_functions_data = pricing_data.get('gcp_functions')
@@ -25,12 +25,12 @@ if not azure_data or not gke_data:
     st.stop()
 
 #azure container apps
-azure_vcpu_pp_s = float(azure_data['vcpu_price_per_second'])
-azure_gib_pp_s = float(azure_data['gib_price_per_second'])
+azure_vcpu_pp_h = float(azure_data['vcpu_price_per_hour'])
+azure_gib_pp_h = float(azure_data['gib_price_per_hour'])
 
 #gke autopilot
-gke_vcpu_pp_m = float(gke_data['vcpu_price_per_minute'])
-gke_gib_pp_m = float(gke_data['gib_price_per_minute'])
+gke_vcpu_pp_h = float(gke_autopilot_data['vcpu_price_per_hour'])
+gke_gib_pp_h = float(gke_autopilot_data['gib_price_per_hour'])
 
 #aws lambda
 # Note: pricing data was taken for instance of 8GB RAM, for such instance the vCPU is 1
@@ -71,34 +71,39 @@ num_tasks = st.slider('Number of Tasks per invocation', 1, 1000, 100)
 num_days = st.slider('Number of Days', 1, 31, 1)
 invocations_per_day = st.slider('Invocations per day', 1, 10000, 1000)
 
-secs = mins * 60
-total_secs = num_tasks * secs * num_days
-total_mins = total_secs / 60
 total_invocations = invocations_per_day * num_tasks * num_days
+total_mins = total_invocations * mins 
+total_secs = total_mins * 60
+
 
 # Calculation
 
-azure_usd_value = total_secs * (azure_vcpu_pp_s * vcpus + azure_gib_pp_s * gibs)
+azure_container_apps_usd_value = 60 * total_mins * (azure_vcpu_pp_h * vcpus + azure_gib_pp_h * gibs)
 
-gke_usd_value = num_days * mins * num_tasks * (gke_vcpu_pp_m * vcpus + gke_gib_pp_m * gibs)
+gke_autopilot_usd_value = 60* total_mins * (gke_vcpu_pp_h * vcpus + gke_gib_pp_h * gibs)
 
-aws_lambda_usd_value = 0 if total_invocations < aws_lambda_free_invocations else 8 *  aws_lambda_gib_pp_s  * total_secs - aws_lambda_free_gibs_pp_s * total_secs
+awseksf_usd_value = 60 * total_mins * (aws_eks_fargate_vcpu_pp_h * vcpus + aws_eks_fargate_gib_pp_h * gibs) 
+
+awseksf_spot_usd_value = 60 * total_mins * (aws_eks_fargate_spot_vcpu_pp_h * vcpus + aws_eks_fargate_spot_gib_pp_h * gibs) 
 
 cloudrun_usd_value =  (total_secs - cr_ft_vcpu_s/vcpus)*(cr_vcpu_pp_s * vcpus)  + (total_secs - cr_ft_gib_s/gibs)*(cr_gib_pp_s * gibs)
 
-cloud_func_usd_value = 0 if total_invocations < cft_invocations else (total_secs - crf_ft_vcpu_s/2)*(crf_vcpu_pp_s * 2)  
+
+aws_lambda_usd_value = 0 if total_invocations < aws_lambda_free_invocations else max(8 *  aws_lambda_gib_pp_s  * total_secs - aws_lambda_free_gibs_pp_s /8 * aws_lambda_gib_pp_s,0)
+
+
+cloud_func_usd_value = 0 if total_invocations < cft_invocations else max( (total_secs - crf_ft_vcpu_s/2)*(crf_vcpu_pp_s * 2),0)  
+
 
 aar_usd_value = total_mins*(aar_vcpu_pp_m * vcpus + aar_gm_pp_m * gibs)
 
-awseksf_usd_value = total_secs * (aws_eks_fargate_vcpu_pp_h * vcpus + aws_eks_fargate_gib_pp_h * gibs) / 3600
 
-awseksf_spot_usd_value = total_secs * (aws_eks_fargate_spot_vcpu_pp_h * vcpus + aws_eks_fargate_spot_gib_pp_h * gibs) / 3600
 
 
 # Textboxes
 st.subheader('Estimated Cost')
-st.text_input("Azure Container Apps (USD)", value=f"{azure_usd_value:.2f}", disabled=True)
-st.text_input("GKE (USD)                    ", value=f"{gke_usd_value:.2f}", disabled=True)
+st.text_input("Azure Container Apps (USD)", value=f"{azure_container_apps_usd_value:.2f}", disabled=True)
+st.text_input("GKE Autopilot (USD)                    ", value=f"{gke_autopilot_usd_value:.2f}", disabled=True)
 st.text_input("AWS Lambda (USD)             ", value=f"{aws_lambda_usd_value:.2f}", disabled=True)
 st.text_input("GCP Cloud run (USD)          ", value=f"{cloudrun_usd_value:.2f}", disabled=True)
 st.text_input("GCP Cloud run functions (USD)", value=f"{cloud_func_usd_value:.2f}", disabled=True)
@@ -111,8 +116,15 @@ st.text_input("AWS EKS Fargate Spot  (USD)", value=f"{awseksf_spot_usd_value:.2f
 import matplotlib.pyplot as plt
 
 # Pie chart data
-labels = 'AZ container apps', 'GKE Autopilot', 'AWS Lambda', 'GCP Cloud Run', 'GCP Cloud Functions','AWS App Run', 'AWS EKS Fargate', 'AWS EKS Fargate Spot'
-sizes = [azure_usd_value, gke_usd_value, aws_lambda_usd_value, cloudrun_usd_value, cloud_func_usd_value,aar_usd_value,awseksf_usd_value, awseksf_spot_usd_value]
+labels = 'AZ container apps', 'GKE Autopilot', 'AWS Lambda', 'GCP Cloud Run', 'GCP Cloud Functions','AWS App Run', 'Fargate', 'Fargate Spot'
+sizes = [azure_container_apps_usd_value,
+         gke_autopilot_usd_value,
+         aws_lambda_usd_value,
+         cloudrun_usd_value,
+         cloud_func_usd_value,
+         aar_usd_value,
+         awseksf_usd_value,
+         awseksf_spot_usd_value]
 
 # Create a pie chart
 fig1, ax1 = plt.subplots()

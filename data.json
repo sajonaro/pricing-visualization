@@ -1,15 +1,17 @@
 {
     "app_containers": {
-        "vcpu_price_per_second": 0.000024,
-        "gib_price_per_second": 0.000003
+        "vcpu_price_per_hour": 0.1224,
+        "gib_price_per_hour": 0.0144
     },
 
     "azure_functions": {
     },
     
-    "gke": {
-        "vcpu_price_per_minute": 0.0008916666666,
-        "gib_price_per_minute":  0.0000986216666
+    "gke_autopilot": {
+        "vcpu_price_per_hour": 0.0535,
+        "gib_price_per_hour":  0.0059173,
+        "vcpu_price_per_hour_spot": 0.016,
+        "gib_price_per_hour_spot":  0.0017752
     },
 
     "gcp_cloudrun": {
@@ -39,8 +41,8 @@
 
     "aws_eks_fargate": {
         "vcpu_price_per_hour": 0.013968,
-        "vcpu_price_per_hour_spot": 0.011175,
         "gv_price_per_hour": 0.001533,
+        "vcpu_price_per_hour_spot": 0.011175,
         "gv_price_per_hour_spot": 0.001227
     }
 
