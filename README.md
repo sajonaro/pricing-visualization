@@ -3,7 +3,7 @@
 
 
 
-### Kubernetes Service Modes Across Major Cloud Providers
+### Managed Kubernetes modes across major cloud providers
 
 | Cloud Provider     | Service Name                     | Autopilot (No Node Management) | Standard                |
 |--------------------|----------------------------------|--------------------------------|-------------------------|
@@ -12,6 +12,17 @@
 | Amazon Web Services (AWS) | Elastic Kubernetes Service (EKS) | Auto Mode               | Standard Mode           |
 | IBM Cloud          | IBM Kubernetes Service           | Not Available                  | Standard Mode           |
 | Oracle Cloud       | Container Engine for Kubernetes (OKE) | Not Available             | Standard Mode           |
+
+### Serverless options 
+| Provider      | Service Name           | Backing Tech          | Abstraction Level | Use Case                                      | Pricing Model                       |
+|---------------|------------------------|-----------------------|-------------------|-----------------------------------------------|-------------------------------------|
+| Google Cloud  | Cloud Run              | Knative               | High              | Stateless HTTP containers                      | Per request + CPU/Memory per sec   |
+| AWS           | App Runner             | AWS-managed           | High              | Web services, APIs from container images       | Per request + CPU/Memory per sec   |
+| Azure         | Azure Container Apps   | Kubernetes + KEDA     | High              | Event-driven or HTTP microservices             | Per request + CPU/Memory per sec   |
+| Azure         | AKS with Virtual Nodes | Kubernetes (AKS + ACI)| Medium           | Burst workloads in Kubernetes                  | Per vCPU/Memory (ACI pricing)       |
+| Google Cloud  | GKE Autopilot          | Kubernetes            | Medium            | Kubernetes apps without node management        | Per pod vCPU/Memory usage          |
+| AWS           | AWS Fargate (with EKS) | Kubernetes (EKS)      | Medium            | Run pods without managing EC2 nodes            | Per vCPU and memory per second     |
+
 
 
 ### Strategies for cost optimization 
