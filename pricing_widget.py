@@ -20,7 +20,7 @@ cloud_functions_data = pricing_data.get('gcp_functions')
 aws_app_runner_data = pricing_data.get('aws_app_runner')
 aws_eks_fargate_data = pricing_data.get('aws_eks_fargate')
 
-if not azure_data or not gke_data:
+if not azure_data or not gke_autopilot_data:
     st.error("Error: 'app_containers' or 'gke' key not found in data.json.")
     st.stop()
 
