@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 import json
 
 # Load pricing data from JSON file
@@ -12,6 +13,9 @@ except json.JSONDecodeError:
     st.error("Error: Invalid JSON format in data.json.")
     st.stop()
 
+## Note: 
+# 1 Pricing data was taken for California North (i.e. relatively expensive region)
+# 2 Price was taken for 2 vCPUs and 8192MB instance (whenever such instance was available)
 azure_data = pricing_data.get('app_containers')
 gke_autopilot_data = pricing_data.get('gke_autopilot')
 cloudrun_data = pricing_data.get('gcp_cloudrun')
@@ -20,8 +24,8 @@ cloud_functions_data = pricing_data.get('gcp_functions')
 aws_app_runner_data = pricing_data.get('aws_app_runner')
 aws_eks_fargate_data = pricing_data.get('aws_eks_fargate')
 
-if not azure_data or not gke_autopilot_data:
-    st.error("Error: 'app_containers' or 'gke' key not found in data.json.")
+if not azure_data or not gke_autopilot_data or not cloudrun_data or not aws_lambda_data or not cloud_functions_data or not aws_app_runner_data or not aws_eks_fargate_data:
+    st.error("Error: 'app_containers' or 'gke' or 'cloudrun' or 'aws_lambda' or 'cloud_functions' or 'aws_app_runner' or 'aws_eks_fargate' key not found in data.json.")
     st.stop()
 
 #azure container apps
@@ -31,6 +35,10 @@ azure_gib_pp_h = float(azure_data['gib_price_per_hour'])
 #gke autopilot
 gke_vcpu_pp_h = float(gke_autopilot_data['vcpu_price_per_hour'])
 gke_gib_pp_h = float(gke_autopilot_data['gib_price_per_hour'])
+
+#gke autopilot spot
+gke_vcpu_pp_h_spot = float(gke_autopilot_data['vcpu_price_per_hour_spot'])
+gke_gib_pp_h_spot = float(gke_autopilot_data['gib_price_per_hour_spot'])
 
 #aws lambda
 # Note: pricing data was taken for instance of 8GB RAM, for such instance the vCPU is 1
@@ -66,75 +74,86 @@ aws_eks_fargate_spot_gib_pp_h = float(aws_eks_fargate_data['gv_price_per_hour_sp
 # Sliders
 vcpus = st.slider('vCPUs', 2, 8, 2)
 gibs = st.slider('GiBs', 8, 24, 8)
-mins = st.slider('Minutes each task runs', 1, 480, 60)
-num_tasks = st.slider('Number of Tasks per invocation', 1, 1000, 100)
-num_days = st.slider('Number of Days', 1, 31, 1)
-invocations_per_day = st.slider('Invocations per day', 1, 10000, 1000)
+mins = st.slider('Minutes each task runs', 1, 120, 8)
+num_tasks = st.slider('Number of Tasks per invocation', 1, 2000, 1000)
+num_days = st.slider('Number of Days', 1, 31, 25)
+invocations_per_day = st.slider('Invocations per day', 1, 200, 20)
+
+
+# Calculations
 
 total_invocations = invocations_per_day * num_tasks * num_days
 total_mins = total_invocations * mins 
 total_secs = total_mins * 60
+total_hours = total_mins / 60
+ 
+# Pricing calculations
 
-
-# Calculation
-
-azure_container_apps_usd_value = 60 * total_mins * (azure_vcpu_pp_h * vcpus + azure_gib_pp_h * gibs)
-
-gke_autopilot_usd_value = 60* total_mins * (gke_vcpu_pp_h * vcpus + gke_gib_pp_h * gibs)
-
-awseksf_usd_value = 60 * total_mins * (aws_eks_fargate_vcpu_pp_h * vcpus + aws_eks_fargate_gib_pp_h * gibs) 
-
-awseksf_spot_usd_value = 60 * total_mins * (aws_eks_fargate_spot_vcpu_pp_h * vcpus + aws_eks_fargate_spot_gib_pp_h * gibs) 
-
-cloudrun_usd_value =  (total_secs - cr_ft_vcpu_s/vcpus)*(cr_vcpu_pp_s * vcpus)  + (total_secs - cr_ft_gib_s/gibs)*(cr_gib_pp_s * gibs)
-
-
-aws_lambda_usd_value = 0 if total_invocations < aws_lambda_free_invocations else max(8 *  aws_lambda_gib_pp_s  * total_secs - aws_lambda_free_gibs_pp_s /8 * aws_lambda_gib_pp_s,0)
-
-
-cloud_func_usd_value = 0 if total_invocations < cft_invocations else max( (total_secs - crf_ft_vcpu_s/2)*(crf_vcpu_pp_s * 2),0)  
-
-
+azure_container_apps_usd = total_hours * (azure_vcpu_pp_h * vcpus + azure_gib_pp_h * gibs)
+gke_autopilot_usd = total_hours * (gke_vcpu_pp_h * vcpus + gke_gib_pp_h * gibs)
+gke_autopilot_spot_usd = total_hours * (gke_vcpu_pp_h_spot * vcpus + gke_gib_pp_h_spot * gibs)
+aws_eksf_usd = total_hours * (aws_eks_fargate_vcpu_pp_h * vcpus + aws_eks_fargate_gib_pp_h * gibs) 
+aws_eksf_spot_usd = total_hours * (aws_eks_fargate_spot_vcpu_pp_h * vcpus + aws_eks_fargate_spot_gib_pp_h * gibs) 
+cloudrun_usd =  (total_secs - cr_ft_vcpu_s/vcpus)*(cr_vcpu_pp_s * vcpus)  + (total_secs - cr_ft_gib_s/gibs)*(cr_gib_pp_s * gibs)
+aws_lambda_usd = 0 if total_invocations < aws_lambda_free_invocations else max(8 *  aws_lambda_gib_pp_s  * total_secs - aws_lambda_free_gibs_pp_s /8 * aws_lambda_gib_pp_s,0)
+cloud_func_usd = 0 if total_invocations < cft_invocations else max( (total_secs - crf_ft_vcpu_s/2)*(crf_vcpu_pp_s * 2),0)  
 aar_usd_value = total_mins*(aar_vcpu_pp_m * vcpus + aar_gm_pp_m * gibs)
 
 
+# Textboxes for tracing data
 
+st.subheader('Total execution stats:')
 
-# Textboxes
-st.subheader('Estimated Cost')
-st.text_input("Azure Container Apps (USD)", value=f"{azure_container_apps_usd_value:.2f}", disabled=True)
-st.text_input("GKE Autopilot (USD)                    ", value=f"{gke_autopilot_usd_value:.2f}", disabled=True)
-st.text_input("AWS Lambda (USD)             ", value=f"{aws_lambda_usd_value:.2f}", disabled=True)
-st.text_input("GCP Cloud run (USD)          ", value=f"{cloudrun_usd_value:.2f}", disabled=True)
-st.text_input("GCP Cloud run functions (USD)", value=f"{cloud_func_usd_value:.2f}", disabled=True)
-st.text_input("AWS App run (USD)", value=f"{aar_usd_value:.2f}", disabled=True)
-st.text_input("AWS EKS Fargate  (USD)", value=f"{awseksf_usd_value:.2f}", disabled=True)
-st.text_input("AWS EKS Fargate Spot  (USD)", value=f"{awseksf_spot_usd_value:.2f}", disabled=True)
+# Create columns
+col1, col2, col3 = st.columns(3)
 
+# Place text inputs in columns
+with col1:
+    st.text_input("Total seconds", value=f"{total_secs}", disabled=True)
+with col2:
+    st.text_input("Total hours", value=f"{total_mins }", disabled=True)
+with col3:
+    st.text_input("Total invocations", value=f"{total_invocations}", disabled=True)
 
-
-import matplotlib.pyplot as plt
 
 # Pie chart data
-labels = 'AZ container apps', 'GKE Autopilot', 'AWS Lambda', 'GCP Cloud Run', 'GCP Cloud Functions','AWS App Run', 'Fargate', 'Fargate Spot'
-sizes = [azure_container_apps_usd_value,
-         gke_autopilot_usd_value,
-         aws_lambda_usd_value,
-         cloudrun_usd_value,
-         cloud_func_usd_value,
+labels = 'AZ ContainerApps', 'GKE Autopilot', 'GKE Autopilot Spot','AWS Lambda', 'GCP Cloud Run', 'GCP Functions','AWS App Run', 'AWS EKS Fargate', 'AWS EKS Fargate Spot'
+sizes = [azure_container_apps_usd,
+         gke_autopilot_usd,
+         gke_autopilot_spot_usd,
+         aws_lambda_usd,
+         cloudrun_usd,
+         cloud_func_usd,
          aar_usd_value,
-         awseksf_usd_value,
-         awseksf_spot_usd_value]
+         aws_eksf_usd,
+         aws_eksf_spot_usd]
+
+# Filter out zero values
+filtered_sizes = [size for size in sizes if size != 0]
+filtered_labels = [label for label, size in zip(labels, sizes) if size != 0]
 
 # Create a pie chart
 fig1, ax1 = plt.subplots()
-ax1.pie(sizes, labels=labels, autopct='%1.1f%%', shadow=False, startangle=90)
+ax1.pie(filtered_sizes, autopct='%1.1f%%', shadow=False, startangle=90)
 ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+# Add a legend
+ax1.legend(labels, loc="upper right", bbox_to_anchor=(1.3, 1))
 
 # Display the chart in Streamlit
 st.subheader('Cost Comparison')
 st.pyplot(fig1)
 
-# Textboxes
-st.subheader('Total seconds ran')
-st.text_input("", value=f"{total_secs}", disabled=True)
+# Textboxes for pricing data
+st.subheader('Estimated Cost Details by Service')
+
+st.text_input("Azure Container Apps (USD)", value=f"{azure_container_apps_usd:.2f}", disabled=True)
+st.text_input("GKE Autopilot (USD)                    ", value=f"{gke_autopilot_usd:.2f}", disabled=True)
+st.text_input("'GKE Autopilot Spot'", value=f"{gke_autopilot_spot_usd:.2f}", disabled=True)
+st.text_input("AWS Lambda (USD)             ", value=f"{aws_lambda_usd:.2f}", disabled=True)
+st.text_input("GCP Cloud run (USD)          ", value=f"{cloudrun_usd:.2f}", disabled=True)
+st.text_input("GCP Cloud run functions (USD)", value=f"{cloud_func_usd:.2f}", disabled=True)
+st.text_input("AWS App run (USD)", value=f"{aar_usd_value:.2f}", disabled=True)
+st.text_input("AWS EKS Fargate  (USD)", value=f"{aws_eksf_usd:.2f}", disabled=True)
+st.text_input("AWS EKS Fargate Spot  (USD)", value=f"{aws_eksf_spot_usd:.2f}", disabled=True)
+
+

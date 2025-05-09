@@ -11,7 +11,8 @@
         "vcpu_price_per_hour": 0.0535,
         "gib_price_per_hour":  0.0059173,
         "vcpu_price_per_hour_spot": 0.016,
-        "gib_price_per_hour_spot":  0.0017752
+        "gib_price_per_hour_spot":  0.0017752,
+        "ephemeral_storage_price_per_hour": 0.000167  
     },
 
     "gcp_cloudrun": {

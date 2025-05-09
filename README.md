@@ -23,18 +23,20 @@
 | Google Cloud  | GKE Autopilot          | Kubernetes            | Medium            | Kubernetes apps without node management        | Per pod vCPU/Memory usage          |
 | AWS           | AWS Fargate (with EKS) | Kubernetes (EKS)      | Medium            | Run pods without managing EC2 nodes            | Per vCPU and memory per second   [link to pricing](https://aws.amazon.com/fargate/pricing/)  |
 
+#### Pricing references
+- [GCP GKE Autopilot](https://cloud.google.com/kubernetes-engine/pricing)
+- [GCP Cloud Run](https://cloud.google.com/run/pricing)
+- [GCP Cloud Run Functions, (aka Functions)](https://cloud.google.com/functions/pricing-1stgen)
+- [AWS EKS Fargate](https://aws.amazon.com/fargate/pricing/)
+- [Azure ContainerApps](https://azure.microsoft.com/en-us/pricing/details/container-apps/)
+
 
 
 ### Strategies for cost optimization 
  - GKE
     - Autopilot + SpotInstances (60-90 % discount for VMs), CUD (Committed Usage Discount)
     - Standard Mode + Kubernetes Autoscaler 
-
-
 - AWS Karpenter (with Spot instances)
-
-
-
 
 
 
@@ -63,7 +65,7 @@ AWS
 
 
 ### Comparison of VM Instances Across Cloud Providers
-
+ 
 | Instance Type    | vCPUs | RAM (GiB) | Price (On-Demand) | Cloud Provider     |
 |------------------|-------|-----------|-------------------|--------------------|
 | Standard_F72s_v2 | 72    | 144       | $3.04/hour        | Azure              |
@@ -71,10 +73,13 @@ AWS
 | m6i.24xlarge      | 96    | 384       | $4.75/hour        | AWS                |
 | n2-highcpu-72     | 72    | 64        | $2.294/hour       | Google Cloud (GCP) |
 
+* VM PRICE REFERENCES:
+    - [Azure](https://instances.vantage.sh/azure/vm/f72s-v2)
+    - [AWS](https://instances.vantage.sh/aws/ec2/c6i.32xlarge)
+    - [GCP](https://instances.vantage.sh/aws/ec2/c6i.32xlarge)
 
 
-
-## running the widget 
+## How to run the widget 
 
 
 ```bash
