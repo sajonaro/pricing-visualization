@@ -1,20 +1,24 @@
 {
 
     "metadata": {
-        "description": "this file contains prices for running containers and serverless options for Azure, AWS and GCP ", 
+        "description": "this file contains prices for running containers and serverless options for Azure, AWS and GCP ",
+        "note": "whenever possible, ARM was preferred (vs x86), for performance/price optimization, AND given we always have at least 2 vCPUs",
         "date": "May, 2025",
-        "region": "us-west-2 (Los Angeles or California if not available) - iff applicable"
+        "region": "us-west-2 = N. California for setting the bar, as the most expensive in US - iff applicable"
     },
 
     "app_containers": {
-        "vcpu_price_per_hour": 0.1224,
-        "gib_price_per_hour": 0.0144
+        "prices_link": "https://azure.microsoft.com/en-us/pricing/details/container-apps/",
+        "vcpu_price_per_second": 0.000024,
+        "gib_price_per_second": 0.000003
     },
 
     "azure_functions": {
     },
     
     "gke_autopilot": {
+        "note": "this is GKE standard (not Enterprise)",
+        "prices_link": "https://cloud.google.com/kubernetes-engine/pricing",
         "vcpu_price_per_hour": 0.0535,
         "gib_price_per_hour":  0.0059173,
         "vcpu_price_per_hour_spot": 0.016,
@@ -22,7 +26,17 @@
         "ephemeral_storage_price_per_hour": 0.000167  
     },
 
+    "gke_standard" :{
+        "note": "This is GKE standard (no Autopilot). We have considered smaller node size (RAM wise) as they perform better for compute optimized load, in our case e2-standard-8 has 32GB of RAM, so we can host 3 pods and leave space for k8 processes. Thus 1000 pods will require ~ 335 VMs",
+        "prices_link": "https://gcloud-compute.com/e2-standard-8.html",
+        "price_per_hour": 0.3276,
+        "price_per_hour_spot": 0.093,
+        "pod_density": 3,
+        "node_pool_size": 335
+    },
+
     "gcp_cloudrun": {
+        "prices_link": "https://cloud.google.com/run/pricing",
         "vcpu_price_per_second": 0.000024,
         "gib_price_per_second":  0.00000250,
         "free_vcpu_seconds": 180000,
@@ -44,15 +58,18 @@
     },
  
     "aws_app_runner": {
-        "vcpu_price_per_minute": 0.00106666,
-        "gv_price_per_minute": 0.0001166666
+        "note": " there is no 2 vCPU 8GB configuration for AWS App Runner, only 2 vCPU 6GB or 4 vCPU 8GB, so we took the 4 vCPU 8GB config",
+        "prices_link": "https://aws.amazon.com/apprunner/pricing/",
+        "vcpu_price_per_hour": 0.064,
+        "gib_price_per_hour": 0.007
     },
 
     "aws_eks_fargate": {
-        "vcpu_price_per_hour": 0.013968,
-        "gv_price_per_hour": 0.001533,
-        "vcpu_price_per_hour_spot": 0.011175,
-        "gv_price_per_hour_spot": 0.001227
+        "prices_link": "https://aws.amazon.com/fargate/pricing/",
+        "vcpu_price_per_hour": 0.03725,
+        "gv_price_per_hour": 0.00409,
+        "vcpu_price_per_hour_spot": 0.00993119,
+        "gv_price_per_hour_spot": 0.00109188
     }
 
 

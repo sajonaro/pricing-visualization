@@ -23,14 +23,20 @@ aws_lambda_data      = pricing_data.get('aws_lambda')
 cloud_functions_data = pricing_data.get('gcp_functions')
 aws_app_runner_data  = pricing_data.get('aws_app_runner')
 aws_eks_fargate_data = pricing_data.get('aws_eks_fargate')
+gke_standard_data   = pricing_data.get('gke_standard')
 
 if not azure_data or not gke_autopilot_data or not cloudrun_data or not aws_lambda_data or not cloud_functions_data or not aws_app_runner_data or not aws_eks_fargate_data:
     st.error("Error: 'app_containers' or 'gke' or 'cloudrun' or 'aws_lambda' or 'cloud_functions' or 'aws_app_runner' or 'aws_eks_fargate' key not found in data.json.")
     st.stop()
 
 #azure container apps
-azure_vcpu_pp_h  = float(azure_data['vcpu_price_per_hour'])
-azure_gib_pp_h   = float(azure_data['gib_price_per_hour'])
+azure_vcpu_pp_s  = float(azure_data['vcpu_price_per_second'])
+azure_gib_pp_s   = float(azure_data['gib_price_per_second'])
+
+#gke standard
+gke_pp_h      = float(gke_standard_data['price_per_hour'])
+gke_pool_size = float(gke_standard_data['node_pool_size'])
+gke_pp_h_spot = float(gke_standard_data['price_per_hour_spot'])
 
 #gke autopilot
 gke_vcpu_pp_h   = float(gke_autopilot_data['vcpu_price_per_hour'])
@@ -60,8 +66,8 @@ crf_ft_gib_s       = float(cloud_functions_data['gibs_free_seconds'])
 
 
 # AWS cloud run 
-aar_vcpu_pp_m   = float(aws_app_runner_data['vcpu_price_per_minute'])
-aar_gm_pp_m     = float(aws_app_runner_data['gv_price_per_minute'])
+aar_vcpu_pp_h   = float(aws_app_runner_data['vcpu_price_per_hour'])
+aar_gb_pp_h     = float(aws_app_runner_data['gib_price_per_hour'])
 
 #AWS EKS_Fargate
 aws_eks_fargate_vcpu_pp_h   = float(aws_eks_fargate_data['vcpu_price_per_hour'])
@@ -86,52 +92,58 @@ num_days            = st.slider('Number of Days', 1, 31, 25)
 total_invocations = invocations_per_day * num_tasks * num_days
 total_mins        = total_invocations * mins 
 total_secs        = total_mins * 60
-total_hours       = total_mins / 60
  
 # Pricing calculations
 
-azure_container_apps_usd = total_hours * (azure_vcpu_pp_h * vcpus + azure_gib_pp_h * gibs)
-gke_autopilot_usd        = total_hours * (gke_vcpu_pp_h * vcpus + gke_gib_pp_h * gibs)
-gke_autopilot_spot_usd   = total_hours * (gke_vcpu_pp_h_spot * vcpus + gke_gib_pp_h_spot * gibs)
-aws_eksf_usd             = total_hours * (aws_eks_fargate_vcpu_pp_h * vcpus + aws_eks_fargate_gib_pp_h * gibs) 
-aws_eksf_spot_usd        = total_hours * (aws_eks_fargate_spot_vcpu_pp_h * vcpus + aws_eks_fargate_spot_gib_pp_h * gibs) 
-cloudrun_usd             = (total_secs - cr_ft_vcpu_s/vcpus)*(cr_vcpu_pp_s * vcpus)  + (total_secs - cr_ft_gib_s/gibs)*(cr_gib_pp_s * gibs)
-# Note, we don't count free invocations, neither for AWS Lambda nor Cloud Run Functions, it is much lover than compute price
+azure_container_apps_usd = total_secs * (azure_vcpu_pp_s  * vcpus + azure_gib_pp_s * gibs)
+gke_autopilot_usd        = total_secs * (gke_vcpu_pp_h / 3600 * vcpus + gke_gib_pp_h / 3600 * gibs)
+gke_autopilot_spot_usd   = total_secs * (gke_vcpu_pp_h_spot / 3600 * vcpus + gke_gib_pp_h_spot / 3600 * gibs)
+aws_eksf_usd             = total_secs * (aws_eks_fargate_vcpu_pp_h / 3600 * vcpus + aws_eks_fargate_gib_pp_h / 3600 * gibs) 
+aws_eksf_spot_usd        = total_secs * (aws_eks_fargate_spot_vcpu_pp_h / 3600 * vcpus + aws_eks_fargate_spot_gib_pp_h / 3600 * gibs) 
+# NOTE, we don't count free invocations, neither for AWS Lambda nor Cloud Run Functions, it is much lover than compute price
 aws_lambda_usd           = max( aws_lambda_gib_pp_s * (total_secs - aws_lambda_free_gibs_pp_s/8),0)
-# GCP pricing page says "free tier includes X GB-seconds and Y vCPU-seconds"  
-# - this is BS, actually it is EITHER X or Y,
-#  moreover whatever runs out first!
-cloud_func_usd           = max( crf_compute_pp_s * (total_secs - min(crf_ft_vcpu_s/2,crf_ft_gib_s/8)),0) 
-app_run_usd              = total_mins * (aar_vcpu_pp_m * vcpus + aar_gm_pp_m * gibs)
 
+# GCP pricing page says "free tier includes X GB-seconds and Y vCPU-seconds"  
+# - this is BS, actually it is EITHER X or Y, i.e. whatever runs out first, then immediately every second is billed!
+cloudrun_usd             = max((total_secs - min(cr_ft_vcpu_s / vcpus, cr_ft_gib_s / gibs)) * (cr_vcpu_pp_s * vcpus + cr_gib_pp_s * gibs), 0)
+cloud_func_usd           = max(crf_compute_pp_s * (total_secs - min(crf_ft_vcpu_s/2,crf_ft_gib_s/8)), 0)
+# NOTE only 4 vcpu 8GB instance is available 
+app_run_usd              = total_secs * (aar_vcpu_pp_h / 3600 * 4 + aar_gb_pp_h / 3600 * 8)
+
+# NOTE: this is rough estimate, as scaling in and out or node pool is not happening instantly (so effective price will be higher)
+# NOTE: Also, additional research required to determine ideal  pod density (i.e pods per node) and CPU / RAM ration of the working nodes in the pool (as general guidance the bigger (RAM) nodes perform better for memory bound tasks )
+# NOTE: we assume the whole cluster works as twice the average task execution time (it sh)
+cluster_working_time_minutes = num_days * invocations_per_day * (2 * mins) * gke_pool_size
+gke_standard_usd             = cluster_working_time_minutes * gke_pp_h / 60
+gke_standard_spot_usd        = cluster_working_time_minutes * gke_pp_h_spot / 60
 
 # Textboxes for tracing data
-
-st.subheader('Total execution stats:')
+st.subheader('Execution stats:')
 
 # Create columns
-col1, col2, col3 = st.columns(3)
+col1, col2  = st.columns(2)
 
 # Place text inputs in columns
 with col1:
-    st.text_input("Total seconds", value=f"{total_secs}", disabled=True)
+    st.text_input("Effective total time (HH:MM:SS)", value=f"{total_secs // 3600:02d}:{(total_secs % 3600) // 60:02d}:{total_secs % 60:02d}", disabled=True)
 with col2:
-    st.text_input("Total hours", value=f"{total_mins }", disabled=True)
-with col3:
     st.text_input("Total invocations", value=f"{total_invocations}", disabled=True)
 
 
 # Pie chart data
-labels = 'AZ ContainerApps', 'GKE Autopilot', 'GKE Autopilot Spot','AWS Lambda', 'GCP Cloud Run', 'GCP Functions','AWS App Run', 'AWS EKS Fargate', 'AWS EKS Fargate Spot'
+labels = 'AZ ContainerApps', 'GKE Autopilot', 'GKE Autopilot Spot',  'GKE Standard','GKE Standard Spot', 'GCP Cloud Run', 'GCP Functions','AWS App Run', 'AWS EKS Fargate', 'AWS EKS Fargate Spot','AWS Lambda',
 sizes = [azure_container_apps_usd,
          gke_autopilot_usd,
          gke_autopilot_spot_usd,
-         aws_lambda_usd,
+         gke_standard_usd,
+         gke_standard_spot_usd,   
          cloudrun_usd,
          cloud_func_usd,
          app_run_usd,
          aws_eksf_usd,
-         aws_eksf_spot_usd]
+         aws_eksf_spot_usd,
+         aws_lambda_usd,
+         ]
 
 # Calculate relative percentages
 total_size = sum(sizes)
@@ -152,6 +164,8 @@ st.pyplot(fig1)
 st.subheader('Estimated Cost Details by Service')
 
 st.text_input("Azure Container Apps (USD)",     value=f"{azure_container_apps_usd:.2f}", disabled=True)
+st.text_input("GKE Standard (USD)",             value=f"{gke_standard_usd:.2f}", disabled=True)
+st.text_input("GKE Standard Spot(USD)",         value=f"{gke_standard_spot_usd:.2f}", disabled=True)
 st.text_input("GKE Autopilot (USD)",            value=f"{gke_autopilot_usd:.2f}", disabled=True)
 st.text_input("GKE Autopilot Spot",             value=f"{gke_autopilot_spot_usd:.2f}", disabled=True)
 st.text_input("AWS Lambda (USD)",               value=f"{aws_lambda_usd:.2f}", disabled=True)

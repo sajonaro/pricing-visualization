@@ -24,6 +24,8 @@
 | AWS           | AWS Fargate (with EKS) | Kubernetes (EKS)      | Medium            | Run pods without managing EC2 nodes            | Per vCPU and memory per second   [link to pricing](https://aws.amazon.com/fargate/pricing/)  |
 
 #### Pricing references
+
+More details are in `./data.json`, but below are some quick links
 - [GCP GKE Autopilot](https://cloud.google.com/kubernetes-engine/pricing)
 - [GCP Cloud Run, LA, ue-west-2](https://cloud.google.com/run/pricing#tables)
 - [GCP Cloud Run Functions, (aka Functions)](https://cloud.google.com/functions/pricing-1stgen), 
@@ -31,40 +33,26 @@
 - [Azure ContainerApps](https://azure.microsoft.com/en-us/pricing/details/container-apps/)
 
 
+### Strategies for cost optimization
 
-### Strategies for cost optimization 
- - GKE
-    - Autopilot + SpotInstances (60-90 % discount for VMs), CUD (Committed Usage Discount)
-    - Standard Mode + Kubernetes Autoscaler 
-- AWS Karpenter (with Spot instances)
+Data shows only { k8 } and {k8 + autopilot } are really viable options (cost efficiency wise).
+So the exact tactics may be:
+1. Using spot instances ( for both K8 and k8 + autopilot)
+2. Using k8 with custom autoscaler e.g. Karpenter 
+3. (Mutually exclusive to 2) Self manage node pool ( * experimenting with pod density,CPU/RAM ratio, VM size, utilization parameters to find optimal configuration )
+4. Combination of above
+5. Make sure to NOT use GKE Enterprise + Autopilot (use standard)
+6. Prefer ARM vs x86 architectures (as it is marginally consistently cheaper)
 
-
-
-Summary details and links to Kubernetes (flavors) and pricing info 
-- Azure container apps [here](https://azure.microsoft.com/en-us/pricing/details/container-apps/)
-- Azure AKS 
-    - Automatic (preview)
-    - Standard mode cluster [pricing](https://azure.microsoft.com/en-us/pricing/details/kubernetes-service/?msockid=173f6a45c2db68ed1d077ed6c39969c9#pricing)
-    - VM [pricing](https://instances.vantage.sh/azure/vm/f72s-v2), e.g. compute optimized F series
-- GCP
-    - Cloud Run Functions, price = compute - free tier  [compute prices, 1st](https://cloud.google.com/functions/pricing-1stgen)
-    - Cloud Run,  price = compute + memory + (flat) invocation - free tier [pricing](https://cloud.google.com/run/pricing)
-    - GKE 
-        - Standard mode [VM prices](https://cloud.google.com/compute/vm-instance-pricing)
-        - Autopilot Mode ( ! No ability to manage node pools!),  us-west-2 [here](https://cloud.google.com/kubernetes-engine/pricing#autopilot_mode)
-- linode LKE [here](https://www.linode.com/pricing/#kubernetes)
-
-AWS
- - EKS Auto Mode (AWS provisions and manages EC2 instances), [price example](https://instances.vantage.sh/aws/ec2/c6i.32xlarge), price = ec2 per hour + [EKS Auto Mode prices](https://aws.amazon.com/eks/pricing/) per hour 
-
- - EKS Standard Mode ( a.k.a Worker Nodes), price = EC2 + `small fees` , [example c6i.32xlarge](https://instances.vantage.sh/aws/ec2/c6i.32xlarge)
-
- - Lambdas, price  = compute + (flat) invocation,  [compute prices](https://aws.amazon.com/lambda/pricing/) 
+#### TODO cost-efficiency / maintainability chart
 
 
+### VM prices reference:
+- [link to Azure](https://instances.vantage.sh/azure/vm/f72s-v2)
+- [link to AWS](https://instances.vantage.sh/aws/ec2/c6i.32xlarge)
+- [link to GCP](https://instances.vantage.sh/aws/ec2/c6i.32xlarge)
 
-
-### Comparison of VM Instances Across Cloud Providers
+#### quick Comparison of VM Instances Across Cloud Providers
  
 | Instance Type    | vCPUs | RAM (GiB) | Price (On-Demand) | Cloud Provider     |
 |------------------|-------|-----------|-------------------|--------------------|
@@ -72,12 +60,6 @@ AWS
 | c6i.32xlarge      | 128   | 256       | $5.44/hour        | AWS                |
 | m6i.24xlarge      | 96    | 384       | $4.75/hour        | AWS                |
 | n2-highcpu-72     | 72    | 64        | $2.294/hour       | Google Cloud (GCP) |
-
-* VM PRICE REFERENCES:
-    - [Azure](https://instances.vantage.sh/azure/vm/f72s-v2)
-    - [AWS](https://instances.vantage.sh/aws/ec2/c6i.32xlarge)
-    - [GCP](https://instances.vantage.sh/aws/ec2/c6i.32xlarge)
-
 
 ## How to run the widget 
 
