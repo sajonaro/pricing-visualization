@@ -1,4 +1,11 @@
 {
+
+    "metadata": {
+        "description": "this file contains prices for running containers and serverless options for Azure, AWS and GCP ", 
+        "date": "May, 2025",
+        "region": "us-west-2 (Los Angeles or California if not available) - iff applicable"
+    },
+
     "app_containers": {
         "vcpu_price_per_hour": 0.1224,
         "gib_price_per_hour": 0.0144
@@ -23,14 +30,15 @@
     },
 
     "gcp_functions": {
-        "vcpu_price_per_second": 0.00006800,
+        "prices_link": "https://cloud.google.com/functions/pricing-1stgen",
+        "vcpu_price_per_second": 0.00006800, 
         "gibs_free_seconds": 400000,
-        "vcpus_free_seconds": 200000,
-        "free_invocations": 2000000
+        "vcpus_free_seconds": 200000
     },
     
     "aws_lambda": {
-        "gib_price_per_second": 0.0000166667,
+        "prices_link": "https://aws.amazon.com/lambda/pricing/",
+        "gib_price_per_second": 0.0001067,
         "free_invocations" : 1000000,
         "free_gib_seconds": 400000
     },

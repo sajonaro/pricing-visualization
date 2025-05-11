@@ -25,8 +25,8 @@
 
 #### Pricing references
 - [GCP GKE Autopilot](https://cloud.google.com/kubernetes-engine/pricing)
-- [GCP Cloud Run](https://cloud.google.com/run/pricing)
-- [GCP Cloud Run Functions, (aka Functions)](https://cloud.google.com/functions/pricing-1stgen)
+- [GCP Cloud Run, LA, ue-west-2](https://cloud.google.com/run/pricing#tables)
+- [GCP Cloud Run Functions, (aka Functions)](https://cloud.google.com/functions/pricing-1stgen), 
 - [AWS EKS Fargate](https://aws.amazon.com/fargate/pricing/)
 - [Azure ContainerApps](https://azure.microsoft.com/en-us/pricing/details/container-apps/)
 
