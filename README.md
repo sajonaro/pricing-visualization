@@ -1,6 +1,18 @@
 
-##  widget to calculate cluster price
+# widget to calculate cluster price
 
+## How to run it 
+
+
+```bash
+# to run the widget
+$ make run
+```
+
+```bash
+# to stop the widget
+$ make kill
+```
 
 
 ### Managed Kubernetes modes across major cloud providers
@@ -61,15 +73,3 @@ So the exact tactics may be:
 | m6i.24xlarge      | 96    | 384       | $4.75/hour        | AWS                |
 | n2-highcpu-72     | 72    | 64        | $2.294/hour       | Google Cloud (GCP) |
 
-## How to run the widget 
-
-
-```bash
-# to run the widget
-$ make run
-```
-
-```bash
-# to stop the widget
-$ make kill
-```

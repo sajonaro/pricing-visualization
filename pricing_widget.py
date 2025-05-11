@@ -167,8 +167,8 @@ st.subheader('Cost Comparison')
 st.pyplot(fig1)
 
 # Textboxes for pricing data
-st.subheader('Estimated Cost Details by Service (from cheapest to most expensive):')
-
+st.subheader('Estimated Cost Details by Service:')
+st.caption('In ascending order of cost')
 usd_values = [
     ("Azure Container Apps (USD)", azure_container_apps_usd),
     ("GKE Standard (USD)", gke_standard_usd),
