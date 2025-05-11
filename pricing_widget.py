@@ -1,5 +1,6 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+import numpy as np
 import json
 
 # Load pricing data from JSON file
@@ -104,15 +105,16 @@ aws_eksf_spot_usd        = total_secs * (aws_eks_fargate_spot_vcpu_pp_h / 3600 *
 aws_lambda_usd           = max( aws_lambda_gib_pp_s * (total_secs - aws_lambda_free_gibs_pp_s/8),0)
 
 # GCP pricing page says "free tier includes X GB-seconds and Y vCPU-seconds"  
-# - this is BS, actually it is EITHER X or Y, i.e. whatever runs out first, then immediately every second is billed!
+# - this is BS! Actually it is EITHER X or Y, i.e. whatever runs out first, then immediately every second is billed!
 cloudrun_usd             = max((total_secs - min(cr_ft_vcpu_s / vcpus, cr_ft_gib_s / gibs)) * (cr_vcpu_pp_s * vcpus + cr_gib_pp_s * gibs), 0)
 cloud_func_usd           = max(crf_compute_pp_s * (total_secs - min(crf_ft_vcpu_s/2,crf_ft_gib_s/8)), 0)
 # NOTE only 4 vcpu 8GB instance is available 
 app_run_usd              = total_secs * (aar_vcpu_pp_h / 3600 * 4 + aar_gb_pp_h / 3600 * 8)
 
-# NOTE: this is rough estimate, as scaling in and out or node pool is not happening instantly (so effective price will be higher)
-# NOTE: Also, additional research required to determine ideal  pod density (i.e pods per node) and CPU / RAM ration of the working nodes in the pool (as general guidance the bigger (RAM) nodes perform better for memory bound tasks )
-# NOTE: we assume the whole cluster works as twice the average task execution time (it sh)
+# NOTE
+# 1: This is rough estimate, as scaling in and out of the node pool is not happening instantly (so effective price will be higher)
+# 2: Also, additional research required to determine ideal  pod density (i.e pods per node) and CPU / RAM ratio of the working nodes in the pool (as general guidance the bigger (RAM) nodes perform better for memory bound tasks )
+# 3: Also, we assume the whole cluster works for twice the average task execution time per invocation (could be optimized)
 cluster_working_time_minutes = num_days * invocations_per_day * (2 * mins) * gke_pool_size
 gke_standard_usd             = cluster_working_time_minutes * gke_pp_h / 60
 gke_standard_spot_usd        = cluster_working_time_minutes * gke_pp_h_spot / 60
@@ -149,28 +151,40 @@ sizes = [azure_container_apps_usd,
 total_size = sum(sizes)
 relative_percentages = [f"{label} ({size / total_size * 100:.1f}%)" for label, size in zip(labels, sizes)]
 
+# Sort labels and sizes by relative percentage
+sorted_labels_and_sizes = sorted(zip(labels, sizes), key=lambda x: x[1] / total_size * 100)
+
 # Create a pie chart
 fig1, ax1 = plt.subplots()
-ax1.pie(sizes, shadow=False, startangle=90 )
+colors = plt.cm.rainbow(np.linspace(0, 1, len(sizes)))
+ax1.pie([size for _, size in sorted_labels_and_sizes], colors=colors, shadow=False, startangle=90)
 ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 # Add a legend
-ax1.legend(relative_percentages, loc="upper right", bbox_to_anchor=(1.5, 1))
+ax1.legend([f"{label} ({size / total_size * 100:.1f}%)" for label, size in sorted_labels_and_sizes], loc="upper right", bbox_to_anchor=(1.5, 1))
 
 # Display the chart in Streamlit
 st.subheader('Cost Comparison')
 st.pyplot(fig1)
 
 # Textboxes for pricing data
-st.subheader('Estimated Cost Details by Service')
+st.subheader('Estimated Cost Details by Service (from cheapest to most expensive):')
 
-st.text_input("Azure Container Apps (USD)",     value=f"{azure_container_apps_usd:.2f}", disabled=True)
-st.text_input("GKE Standard (USD)",             value=f"{gke_standard_usd:.2f}", disabled=True)
-st.text_input("GKE Standard Spot(USD)",         value=f"{gke_standard_spot_usd:.2f}", disabled=True)
-st.text_input("GKE Autopilot (USD)",            value=f"{gke_autopilot_usd:.2f}", disabled=True)
-st.text_input("GKE Autopilot Spot",             value=f"{gke_autopilot_spot_usd:.2f}", disabled=True)
-st.text_input("AWS Lambda (USD)",               value=f"{aws_lambda_usd:.2f}", disabled=True)
-st.text_input("GCP Cloud run (USD)",            value=f"{cloudrun_usd:.2f}", disabled=True)
-st.text_input("GCP Cloud run functions (USD)",  value=f"{cloud_func_usd:.2f}", disabled=True)
-st.text_input("AWS App run (USD)",              value=f"{app_run_usd:.2f}", disabled=True)
-st.text_input("AWS EKS Fargate  (USD)",         value=f"{aws_eksf_usd:.2f}", disabled=True)
-st.text_input("AWS EKS Fargate Spot  (USD)",    value=f"{aws_eksf_spot_usd:.2f}", disabled=True)
+usd_values = [
+    ("Azure Container Apps (USD)", azure_container_apps_usd),
+    ("GKE Standard (USD)", gke_standard_usd),
+    ("GKE Standard Spot(USD)", gke_standard_spot_usd),
+    ("GKE Autopilot (USD)", gke_autopilot_usd),
+    ("GKE Autopilot Spot", gke_autopilot_spot_usd),
+    ("AWS Lambda (USD)", aws_lambda_usd),
+    ("GCP Cloud run (USD)", cloudrun_usd),
+    ("GCP Cloud run functions (USD)", cloud_func_usd),
+    ("AWS App run (USD)", app_run_usd),
+    ("AWS EKS Fargate  (USD)", aws_eksf_usd),
+    ("AWS EKS Fargate Spot  (USD)", aws_eksf_spot_usd),
+]
+
+sorted_usd_values = sorted(usd_values, key=lambda x: x[1])
+
+for i, (label, value) in enumerate(sorted_usd_values, start=1):
+    st.write(f"{i}. {label}:")
+    st.text_input("", value=f"{value:.2f}", disabled=True)
