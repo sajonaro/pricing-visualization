@@ -14,7 +14,12 @@
     },
 
     "azure_functions": {
+        "note": "On demand (= no minimum instance count required), US West 2, only up to  1.5 GB per invocation can be allocated",
+        "prices_link": "https://azure.microsoft.com/en-us/pricing/details/functions/#overview",
+        "gib_price_per_second": 0.000016,
+        "free_gib_seconds": 100000
     },
+
     
     "gke_autopilot": {
         "note": "this is GKE standard (not Enterprise)",
@@ -31,6 +36,15 @@
         "prices_link": "https://gcloud-compute.com/e2-standard-8.html",
         "price_per_hour": 0.3276,
         "price_per_hour_spot": 0.093,
+        "pod_density": 3,
+        "node_pool_size": 335
+    },
+
+    "aks_standard": {
+        "note": "this is AKS standard, D8ps v6 (8 vCPUs, 32GB RAM) - we have considered smaller node size (RAM wise) as they perform better for compute optimized load, in our case D4ps v6 has 16GB of RAM, so we can host 3 pods and leave space for k8 processes. Thus 1000 pods will require ~ 335 VMs",
+        "prices_link": "https://azure.microsoft.com/en-us/pricing/spot-advisor/",
+        "price_per_hour": 0.33,
+        "price_per_hour_spot": 0.05,
         "pod_density": 3,
         "node_pool_size": 335
     },
