@@ -96,7 +96,10 @@ invocations_per_day = st.slider('Invocations per day', 1, 200, 20)
 mins                = st.slider('Minutes each task runs', 1, 120, 8)
 num_tasks           = st.slider('Number of Tasks per invocation', 1, 2000, 1000)
 num_days            = st.slider('Number of Days', 1, 31, 25)
-
+# what percentage of the pool is always on (i.e never scaled down to 0)
+st.caption('Applicable only to: GKE/AKS/EKS non-autopilot')
+#ha_nodes_percentage = 100 means node pool stays always scaled out to max size
+ha_nodes_percentage = st.slider('Percentage of the always-on nodes in the pool ', 1, 100, 10)
 
 
 # Calculations
@@ -112,8 +115,9 @@ gke_autopilot_usd        = total_secs * (gke_vcpu_pp_h / 3600 * vcpus + gke_gib_
 gke_autopilot_spot_usd   = total_secs * (gke_vcpu_pp_h_spot / 3600 * vcpus + gke_gib_pp_h_spot / 3600 * gibs)
 aws_eksf_usd             = total_secs * (aws_eks_fargate_vcpu_pp_h / 3600 * vcpus + aws_eks_fargate_gib_pp_h / 3600 * gibs) 
 aws_eksf_spot_usd        = total_secs * (aws_eks_fargate_spot_vcpu_pp_h / 3600 * vcpus + aws_eks_fargate_spot_gib_pp_h / 3600 * gibs) 
-# NOTE, we don't count free invocations, neither for AWS Lambda nor Cloud Run Functions, it is much lover than compute price
-aws_lambda_usd           = max( 8 * aws_lambda_gib_pp_s * (total_secs - aws_lambda_free_gibs_pp_s/8),0)
+# NOTE, we don't count free invocations in our formula,
+# neither for AWS Lambda nor Cloud Run Functions, it is much lover than compute price
+aws_lambda_usd           = max( aws_lambda_gib_pp_s * (total_secs - aws_lambda_free_gibs_pp_s/8),0)
 
 # NOTE, COnsumption plan serverless allows ONLY 1.5GB allocated per execution
 azure_funcs_usd          = max( 1.5 * azure_func_gibs_pp_s * (total_secs - azure_func_free_gibs_pp_s/8),0)
@@ -124,30 +128,39 @@ cloud_func_usd           = max(crf_compute_pp_s * (total_secs - min(crf_ft_vcpu_
 # NOTE only 4 vcpu 8GB instance is available 
 app_run_usd              = total_secs * (aar_vcpu_pp_h / 3600 * 4 + aar_gb_pp_h / 3600 * 8)
 
+
+
 # NOTE
 # 1: This is rough estimate, as scaling in and out of the node pool is not happening instantly (so effective price will be higher)
 # 2: Also, additional research required to determine ideal  pod density (i.e pods per node) and CPU / RAM ratio of the working nodes in the pool (as general guidance the bigger (RAM) nodes perform better for memory bound tasks )
 # 3: Also, we assume the whole cluster works for twice the average task execution time per invocation (could be optimized)
-cluster_working_time_minutes = num_days * invocations_per_day * (2 * mins) * gke_pool_size
-gke_standard_usd             = cluster_working_time_minutes * gke_pp_h / 60
-gke_standard_spot_usd        = cluster_working_time_minutes * gke_pp_h_spot / 60
+# gke_pool_size = aks_pool_size = 335 ( for selected SKU of 8vcpu 32 RAM)
+always_on_nodes_count              = float(ha_nodes_percentage / 100) * gke_pool_size
+scaled_nodes_working_time_minutes  = num_days * invocations_per_day * (2 * mins) * (gke_pool_size - always_on_nodes_count)
+total_node_hours_working_time      = scaled_nodes_working_time_minutes / 60 + always_on_nodes_count * num_days * 8
 
+# we assume that the always on nodes work 8 hours per day (therefore total hours = 8 * num_days)
+gke_standard_usd                  = total_node_hours_working_time * gke_pp_h
+gke_standard_spot_usd             = total_node_hours_working_time * gke_pp_h_spot 
 
-aks_standard_usd             = cluster_working_time_minutes * aks_pp_h / 60
-aks_standard_spot_usd        = cluster_working_time_minutes * aks_pp_h_spot / 60
+aks_standard_usd                  = total_node_hours_working_time * aks_pp_h
+aks_standard_spot_usd             = total_node_hours_working_time * aks_pp_h_spot
 
 # Textboxes for tracing data
 st.subheader('Execution stats:')
 
 # Create columns
-col1, col2  = st.columns(2)
+col1, col2 = st.columns(2)
 
 # Place text inputs in columns
 with col1:
-    st.text_input("Effective total time (HH:MM:SS)", value=f"{total_secs // 3600:02d}:{(total_secs % 3600) // 60:02d}:{total_secs % 60:02d}", disabled=True)
+    st.text_input("Effective total PODS run time (HH:MM:SS)", value=f"{total_secs // 3600:02d}:{(total_secs % 3600) // 60:02d}:{total_secs % 60:02d}", disabled=True)
 with col2:
     st.text_input("Total invocations", value=f"{total_invocations}", disabled=True)
 
+st.caption('Applicable only to: GKE/AKS/EKS non-autopilot')
+# i.e. amount of hours 1 node of SKU would have to run to do the job 
+st.text_input("Total node x hours of working time (depends on pool size, autoscaling algorithm and ha_nodes_percentage)", value=f"{total_node_hours_working_time}", disabled=True)
 
 # Pie chart data
 labels = (
@@ -162,7 +175,6 @@ labels = (
     'AWS EKS Fargate',
     'AWS EKS Fargate Spot',
     'AWS Lambda',
-    'Azure functions',
     "AKS Standard",
     "AKS Standard Spot"
 )
@@ -177,7 +189,6 @@ sizes = [azure_container_apps_usd,
          aws_eksf_usd,
          aws_eksf_spot_usd,
          aws_lambda_usd,
-         azure_funcs_usd,
          aks_standard_usd,
          aks_standard_spot_usd
          ]
@@ -216,7 +227,6 @@ usd_values = [
     ("AWS App run (USD)", app_run_usd),
     ("AWS EKS Fargate  (USD)", aws_eksf_usd),
     ("AWS EKS Fargate Spot  (USD)", aws_eksf_spot_usd),
-    ("Azure functions, on demand (USD)", azure_funcs_usd),
     ("AKS Standard (USD)", aks_standard_usd),
     ("AKS Standard Spot (USD)", aks_standard_spot_usd)
 ]
